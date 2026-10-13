@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import json
+import threading
+import time
 
 import paho.mqtt.client as mqtt
 import rclpy
@@ -36,11 +38,20 @@ class MqttJoystickBridge(Node):
             "max_turn", 1.0, ParameterDescriptor(description="Turn rate at full joystick, rad/s")).value
         self.dead_zone = self.declare_parameter(
             "dead_zone", 10, ParameterDescriptor(description="Joystick values below this count as 0")).value
+        repeat_hz = self.declare_parameter(
+            "repeat_hz", 10.0,
+            ParameterDescriptor(description="Rate at which the last joystick command is republished, Hz")).value
+        self.hold_s = self.declare_parameter(
+            "hold_s", 3.0,
+            ParameterDescriptor(description="Stop the car after this long without an MQTT message, s")).value
 
         self.pubs = {f"{self.prefix}/team{t}/joy": self.create_publisher(Twist, f"/team{t}/cmd_vel", 10)
                      for t in teams}
         self.seen: set[str] = set()
         self.finished: set[str] = set()
+        self.last: dict[str, tuple[Twist, float]] = {}
+        self.lock = threading.Lock()
+        self.create_timer(1.0 / repeat_hz, self.repeat)
         latched = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE,
                              durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.create_subscription(String, "/race/finished", self.on_finished, latched)
@@ -94,7 +105,26 @@ class MqttJoystickBridge(Node):
         twist = Twist()
         twist.linear.x = self.scale(y) * self.max_speed
         twist.angular.z = -self.scale(x) * self.max_turn
+        with self.lock:
+            self.last[message.topic] = (twist, time.monotonic())
         pub.publish(twist)
+
+    def repeat(self) -> None:
+        now = time.monotonic()
+        with self.lock:
+            items = list(self.last.items())
+        for topic, (twist, stamp) in items:
+            pub = self.pubs[topic]
+            if pub.topic_name in self.finished:
+                continue
+            if now - stamp < self.hold_s:
+                pub.publish(twist)
+                continue
+            with self.lock:
+                if self.last.get(topic, (None, None))[1] == stamp:
+                    del self.last[topic]
+            pub.publish(Twist())
+            self.get_logger().warn(f"no joystick message for {self.hold_s} s on {topic}: stopping the car")
 
     def destroy_node(self) -> bool:
         self.client.loop_stop()
