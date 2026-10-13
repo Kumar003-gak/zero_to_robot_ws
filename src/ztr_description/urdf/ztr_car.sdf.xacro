@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+
+<sdf version="1.8" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="name" default="team1"/>
+  <xacro:arg name="color" default="red"/>
+  <xacro:arg name="max_speed" default="5.0"/>
+  <xacro:arg name="collide_bitmask" default="65535"/>
+
+  <xacro:property name="mesh" value="model://ztr_car/meshes/Hybrid.obj"/>
+  <xacro:property name="mesh_scale" value="0.01 0.01 0.01"/>
+  <xacro:property name="yaw_fix" value="1.5707963"/>
+
+  <xacro:property name="front_x" value="1.41"/>
+  <xacro:property name="rear_x" value="-1.45"/>
+  <xacro:property name="front_y" value="0.76"/>
+  <xacro:property name="rear_y" value="0.786"/>
+  <xacro:property name="wheel_z" value="0.31265"/>
+  <xacro:property name="wheel_radius" value="0.31265"/>
+  <xacro:property name="wheel_width" value="0.22"/>
+  <xacro:property name="wheel_mass" value="11.0"/>
+  <xacro:property name="max_steer" value="0.6"/>
+
+  <xacro:macro name="mesh_visual" params="vname submesh pose:='0 0 0 0 0 ${yaw_fix}' center:=false">
+    <visual name="${vname}">
+      <pose>${pose}</pose>
+      <geometry>
+        <mesh>
+          <uri>${mesh}</uri>
+          <scale>${mesh_scale}</scale>
+          <submesh><name>${submesh}</name><center>${center}</center></submesh>
+        </mesh>
+      </geometry>
+    </visual>
+  </xacro:macro>
+
+  <xacro:macro name="wheel" params="wname x y submesh offset">
+    <link name="${wname}">
+      <pose>${x} ${y} ${wheel_z} 0 0 0</pose>
+      <inertial>
+        <mass>${wheel_mass}</mass>
+        <inertia>
+          <ixx>0.3355</ixx><iyy>0.5863</iyy><izz>0.3355</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <xacro:mesh_visual vname="visual" submesh="${submesh}" center="true"
+                         pose="0 ${offset} 0 0 0 ${yaw_fix}"/>
+      <collision name="collision">
+        <pose>0 0 0 1.5707963 0 0</pose>
+        <geometry>
+          <cylinder><radius>${wheel_radius}</radius><length>${wheel_width}</length></cylinder>
+        </geometry>
+        <surface>
+          <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
+          <contact><collide_bitmask>$(arg collide_bitmask)</collide_bitmask></contact>
+        </surface>
+      </collision>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="steering_link" params="sname x y">
+    <link name="${sname}">
+      <pose>${x} ${y} ${wheel_z} 0 0 0</pose>
+      <inertial>
+        <mass>2.0</mass>
+        <inertia>
+          <ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+    </link>
+  </xacro:macro>
+
+  <model name="$(arg name)">
+    <link name="chassis">
+
+      <inertial>
+        <pose>0.266 0 0.48 0 0 0</pose>
+        <mass>1326.0</mass>
+        <inertia>
+          <ixx>591.3</ixx><iyy>2581.1</iyy><izz>2681.9</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <visual name="body">
+        <pose>0 0 0 0 0 ${yaw_fix}</pose>
+        <geometry>
+          <mesh>
+            <uri>${mesh}</uri>
+            <scale>${mesh_scale}</scale>
+            <submesh><name>Hybrid</name><center>false</center></submesh>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+          <specular>0.6 0.6 0.6 1</specular>
+          <pbr>
+            <metal>
+              <albedo_map>model://ztr_car/materials/textures/Hybrid_$(arg color).png</albedo_map>
+              <metalness>0.3</metalness>
+              <roughness>0.35</roughness>
+            </metal>
+          </pbr>
+        </material>
+      </visual>
+      <xacro:mesh_visual vname="interior" submesh="Hybrid_Interior"/>
+      <xacro:mesh_visual vname="windows" submesh="Hybrid_Windows"/>
+      <xacro:mesh_visual vname="steering_wheel" submesh="Steering_Wheel"/>
+
+      <collision name="lower_body">
+        <pose>-0.02 0 0.55 0 0 0</pose>
+        <geometry><box><size>4.40 1.75 0.60</size></box></geometry>
+        <surface><contact><collide_bitmask>$(arg collide_bitmask)</collide_bitmask></contact></surface>
+      </collision>
+      <collision name="cabin">
+        <pose>-0.25 0 1.15 0 0 0</pose>
+        <geometry><box><size>2.40 1.45 0.60</size></box></geometry>
+        <surface><contact><collide_bitmask>$(arg collide_bitmask)</collide_bitmask></contact></surface>
+      </collision>
+    </link>
+
+    <xacro:steering_link sname="front_left_steering" x="${front_x}" y="${front_y}"/>
+    <xacro:steering_link sname="front_right_steering" x="${front_x}" y="${-front_y}"/>
+    <xacro:wheel wname="front_left_wheel" x="${front_x}" y="${front_y}" submesh="Wheel_Front_Left_" offset="0.04"/>
+    <xacro:wheel wname="front_right_wheel" x="${front_x}" y="${-front_y}" submesh="Wheel_Front_Right" offset="-0.04"/>
+    <xacro:wheel wname="rear_left_wheel" x="${rear_x}" y="${rear_y}" submesh="Wheel_Front_Left_" offset="0.04"/>
+    <xacro:wheel wname="rear_right_wheel" x="${rear_x}" y="${-rear_y}" submesh="Wheel_Front_Right" offset="-0.04"/>
+
+    <joint name="front_left_steering_joint" type="revolute">
+      <parent>chassis</parent>
+      <child>front_left_steering</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>${-max_steer}</lower><upper>${max_steer}</upper><velocity>1.5</velocity><effort>2000</effort></limit>
+      </axis>
+    </joint>
+    <joint name="front_right_steering_joint" type="revolute">
+      <parent>chassis</parent>
+      <child>front_right_steering</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>${-max_steer}</lower><upper>${max_steer}</upper><velocity>1.5</velocity><effort>2000</effort></limit>
+      </axis>
+    </joint>
+    <joint name="front_left_wheel_joint" type="revolute">
+      <parent>front_left_steering</parent>
+      <child>front_left_wheel</child>
+      <axis><xyz>0 1 0</xyz></axis>
+    </joint>
+    <joint name="front_right_wheel_joint" type="revolute">
+      <parent>front_right_steering</parent>
+      <child>front_right_wheel</child>
+      <axis><xyz>0 1 0</xyz></axis>
+    </joint>
+    <joint name="rear_left_wheel_joint" type="revolute">
+      <parent>chassis</parent>
+      <child>rear_left_wheel</child>
+      <axis><xyz>0 1 0</xyz></axis>
+    </joint>
+    <joint name="rear_right_wheel_joint" type="revolute">
+      <parent>chassis</parent>
+      <child>rear_right_wheel</child>
+      <axis><xyz>0 1 0</xyz></axis>
+    </joint>
+
+    <plugin filename="ignition-gazebo-ackermann-steering-system"
+            name="ignition::gazebo::systems::AckermannSteering">
+      <left_joint>front_left_wheel_joint</left_joint>
+      <left_joint>rear_left_wheel_joint</left_joint>
+      <right_joint>front_right_wheel_joint</right_joint>
+      <right_joint>rear_right_wheel_joint</right_joint>
+      <left_steering_joint>front_left_steering_joint</left_steering_joint>
+      <right_steering_joint>front_right_steering_joint</right_steering_joint>
+      <kingpin_width>${2 * front_y}</kingpin_width>
+      <steering_limit>${max_steer}</steering_limit>
+      <wheel_base>${front_x - rear_x}</wheel_base>
+      <wheel_separation>${front_y + rear_y}</wheel_separation>
+      <wheel_radius>${wheel_radius}</wheel_radius>
+      <max_velocity>$(arg max_speed)</max_velocity>
+      <min_velocity>${-0.5 * $(arg max_speed)}</min_velocity>
+      <max_acceleration>3.0</max_acceleration>
+      <min_acceleration>-6.0</min_acceleration>
+      <odom_publish_frequency>20</odom_publish_frequency>
+    </plugin>
+  </model>
+</sdf>

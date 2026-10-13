@@ -1,0 +1,7 @@
+teams:
+  1: {color: red,    x: -8.0,  y: -15.0}
+  2: {color: blue,   x: -8.0,  y: -18.0}
+  3: {color: green,  x: -8.0,  y: -21.0}
+  4: {color: yellow, x: -16.0, y: -15.0}
+  5: {color: orange, x: -16.0, y: -18.0}
+  6: {color: purple, x: -16.0, y: -21.0}
