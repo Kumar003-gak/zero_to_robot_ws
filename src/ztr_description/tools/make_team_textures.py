@@ -11,6 +11,7 @@ TEAM_COLORS: dict[int, tuple[str, tuple[int, int, int]]] = {
     4: ("yellow", (240, 200, 15)),
     5: ("orange", (245, 115, 15)),
     6: ("purple", (135, 45, 185)),
+    7: ("cyan", (0, 190, 200)),
 }
 
 TEXTURE_DIR = Path(__file__).resolve().parent.parent / "models" / "ztr_car" / "materials" / "textures"

@@ -104,8 +104,8 @@ def generate_launch_description() -> LaunchDescription:
     desc_models = os.path.join(get_package_share_directory("ztr_description"), "models")
     sim_models = os.path.join(get_package_share_directory("ztr_gazebo"), "models")
     return LaunchDescription([
-        DeclareLaunchArgument("teams", default_value="1,2,3,4,5,6",
-                              description="Comma-separated team numbers (1-6)"),
+        DeclareLaunchArgument("teams", default_value="1,2,3,4,5,6,7",
+                              description="Comma-separated team numbers (1-7)"),
         DeclareLaunchArgument("max_speed", default_value="5.0",
                               description="Car speed limit, m/s"),
         DeclareLaunchArgument("max_turn", default_value="1.0",

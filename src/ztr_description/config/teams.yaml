@@ -5,3 +5,4 @@ teams:
   4: {color: yellow, x: -16.0, y: -15.0}
   5: {color: orange, x: -16.0, y: -18.0}
   6: {color: purple, x: -16.0, y: -21.0}
+  7: {color: cyan,   x: -24.0, y: -15.0}

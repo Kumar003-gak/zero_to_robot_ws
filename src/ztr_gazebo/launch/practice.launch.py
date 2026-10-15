@@ -10,7 +10,7 @@ from launch.substitutions import LaunchConfiguration
 def generate_launch_description() -> LaunchDescription:
     race = os.path.join(get_package_share_directory("ztr_gazebo"), "launch", "race.launch.py")
     return LaunchDescription([
-        DeclareLaunchArgument("team", default_value="1", description="Your team number (1-6)"),
+        DeclareLaunchArgument("team", default_value="1", description="Your team number (1-7)"),
         DeclareLaunchArgument("max_speed", default_value="5.0",
                               description="Car speed limit, m/s"),
         DeclareLaunchArgument("topic_prefix", default_value="",
